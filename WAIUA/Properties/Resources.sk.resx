@@ -121,135 +121,135 @@
     <value>Info</value>
   </data>
   <data name="JoinDiscord" xml:space="preserve">
-    <value>Rejoignez notre Discord</value>
+    <value>Pripojte sa na Discord</value>
   </data>
   <data name="JoinDiscordSub" xml:space="preserve">
-    <value>Pour du support, etc.</value>
+    <value>Pre podporu od ostatných, atď.</value>
   </data>
   <data name="Author" xml:space="preserve">
-    <value>Fait par Soneliem</value>
+    <value>Vytvoril Soneliem</value>
   </data>
   <data name="Latestversion" xml:space="preserve">
-    <value>Dernière version:</value>
+    <value>Najnovšia Verzia:</value>
   </data>
   <data name="CurrentVersion" xml:space="preserve">
-    <value>Version actuelle:</value>
+    <value>Aktuálná Verzia:</value>
   </data>
   <data name="CheckUpdates" xml:space="preserve">
-    <value>Rechercher des mises à jour</value>
+    <value>Skontrolovať Aktualizácie</value>
   </data>
   <data name="Login" xml:space="preserve">
-    <value>Connexion</value>
+    <value>Prihlásiť sa</value>
   </data>
   <data name="SettingsInfoExplanation2" xml:space="preserve">
-    <value>Toute communication de vos identifiants sont faits directement avec les serveurs Riot sans aucun stockage de mots de passe localement ou en ligne.</value>
+    <value>Všetka komunikácia týkajúca sa vašich prihlasovacích údajov prebieha priamo cez servery Riot bez ukladania hesiel lokálne alebo online.</value>
   </data>
   <data name="AuthStatusTitle" xml:space="preserve">
-    <value>Statut authentification</value>
+    <value>Stav Prihlásenia</value>
   </data>
   <data name="AuthStatusDefault" xml:space="preserve">
-    <value>Cliquer ci-dessous pour mettre à jour</value>
+    <value>Kliknite dole pre Aktualizáciu</value>
   </data>
   <data name="AuthStatusButton" xml:space="preserve">
-    <value>Vérifier authentification</value>
+    <value>Skontrolovať Prihlásenie</value>
   </data>
   <data name="AuthStatusAuthAs" xml:space="preserve">
-    <value>Authentifié comme:</value>
+    <value>Prihlásený Ako:</value>
   </data>
   <data name="AutoLoginTitle" xml:space="preserve">
-    <value>Connexion automatique</value>
+    <value>Automatické Prihlasovanie</value>
   </data>
   <data name="AutoLoginExplanation" xml:space="preserve">
-    <value>Note: Valorant doit être en cours d&apos;exécution pour que cela fonctionne</value>
+    <value>Poznámka: Valorant musí byť zapnutý aby toto fungovalo</value>
   </data>
   <data name="AuthStatusFail" xml:space="preserve">
-    <value>Non authentifié</value>
+    <value>Nie ste Prihlásený</value>
   </data>
   <data name="Translator" xml:space="preserve">
-    <value>Traduit en Français par Rayjacker et SeifB_</value>
+    <value>Translated into Slovak By Dom_Zel</value>
     <comment>Please replace the Language and Names</comment>
   </data>
   <data name="RefreshMatch" xml:space="preserve">
-    <value>Cliquer ici pour rafraîchir le match</value>
+    <value>Kliknite Pre Obnovenie Zápasu</value>
   </data>
   <data name="SettingsTitle" xml:space="preserve">
-    <value>Paramètres</value>
+    <value>Nastavenia</value>
   </data>
   <data name="SettingsInfoExplanation1" xml:space="preserve">
-    <value>Cette page vous permet de vous connecter, changer la langue de l&apos;appli, etc.</value>
+    <value>Nastavenie vám umožňuje manuálne sa prihlásiť, zmeniť jazyk aplikácie atď.</value>
   </data>
   <data name="SelLanguageTitle" xml:space="preserve">
-    <value>Sélectionner le language</value>
+    <value>Vybrať Jazyk</value>
   </data>
   <data name="Error" xml:space="preserve">
-    <value>Erreur</value>
+    <value>Chyba</value>
   </data>
   <data name="Refreshing" xml:space="preserve">
-    <value>Rafraîchissement...</value>
+    <value>Obnovovanie...</value>
   </data>
   <data name="NoMatch" xml:space="preserve">
-    <value>Aucun match détecté</value>
+    <value>Žiadný Zápas Nebol Detekovaný</value>
   </data>
   <data name="NoValGame" xml:space="preserve">
-    <value>Merci d&apos;ouvrir Valorant d&apos;abord</value>
+    <value>Najprv Zapnite Valorant, Prosím</value>
   </data>
   <data name="TrackerToolTip" xml:space="preserve">
-    <value>Ouvrir le profil Tracker.gg</value>
+    <value>Otvoriť Tracker.gg Profil</value>
   </data>
   <data name="CheckDownloadTitle" xml:space="preserve">
-    <value>Vérifier le contenu téléchargé</value>
+    <value>Skontrolovať Stiahnutý Obsah</value>
   </data>
   <data name="CheckDownloadButton" xml:space="preserve">
-    <value>Forcer une mise à jour</value>
+    <value>Vynútiť Aktualizáciu</value>
   </data>
   <data name="SponsorsTitle" xml:space="preserve">
-    <value>Sponsors</value>
+    <value>Sponzori</value>
   </data>
   <data name="Home" xml:space="preserve">
-    <value>Accueil</value>
+    <value>WAIUA</value>
   </data>
   <data name="Refresh" xml:space="preserve">
-    <value>Rafraîchir</value>
+    <value>Obnoviť</value>
   </data>
   <data name="Account" xml:space="preserve">
-    <value>Compte</value>
+    <value>Účet</value>
   </data>
   <data name="Match" xml:space="preserve">
-    <value>Match</value>
+    <value>Zápas</value>
   </data>
   <data name="Status" xml:space="preserve">
-    <value>Statut</value>
+    <value>Stav</value>
   </data>
   <data name="Valorant" xml:space="preserve">
     <value>Valorant</value>
   </data>
   <data name="YourParty" xml:space="preserve">
-    <value>Votre groupe</value>
+    <value>Tvoja Party</value>
   </data>
   <data name="QueueTime" xml:space="preserve">
-    <value>Temps queue:</value>
+    <value>Doba Čakanie:</value>
   </data>
   <data name="RefreshingIn" xml:space="preserve">
-    <value>Rafraîchissement dans:</value>
+    <value>Obnovenie Za:</value>
   </data>
   <data name="Score" xml:space="preserve">
-    <value>Score:</value>
+    <value>Skóre:</value>
   </data>
   <data name="HighScore" xml:space="preserve">
-    <value>Meilleur Score:</value>
+    <value>Najvyššie Skóre:</value>
   </data>
   <data name="StartTrainer" xml:space="preserve">
-    <value>Commencer l&apos;exercice de visée</value>
+    <value>Zapnúť Aim Trainer</value>
   </data>
   <data name="Player" xml:space="preserve">
-    <value>Joueur</value>
+    <value>Hráč</value>
   </data>
   <data name="Peak" xml:space="preserve">
-    <value>Pic:</value>
+    <value>Peak:</value>
     <comment>Peak Rank</comment>
   </data>
   <data name="WR" xml:space="preserve">
-    <value>TV:</value>
+    <value>WR:</value>
     <comment>Win Rate</comment>
   </data>
 </root>

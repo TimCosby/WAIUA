@@ -34,16 +34,19 @@ public class LiveMatch
         request.AddHeader("X-Riot-Entitlements-JWT", Constants.EntitlementToken);
         request.AddHeader("Authorization", $"Bearer {Constants.AccessToken}");
         var response = await client.ExecuteGetAsync<MatchIDResponse>(request).ConfigureAwait(false);
-        if (response.IsSuccessful)
+        if (response.IsSuccessful && response.Data != null)
         {
             Matchid = response.Data.MatchId;
             Stage = "core";
+            if (response.Data.MatchId == Constants.MatchId) return true;
+            Constants.MatchId = response.Data.MatchId;
+            foreach (var key in Constants.UrlToBody.Keys.Where(key => key.Contains("mmr"))) Constants.UrlToBody.TryRemove(key, out _);
             return true;
         }
 
         client = new RestClient($"https://glz-{Constants.Shard}-1.{Constants.Region}.a.pvp.net/pregame/v1/players/{Constants.Ppuuid}");
         response = await client.ExecuteGetAsync<MatchIDResponse>(request).ConfigureAwait(false);
-        if (response.IsSuccessful)
+        if (response.IsSuccessful && response.Data != null)
         {
             Matchid = response.Data.MatchId;
             Stage = "pre";
@@ -116,7 +119,7 @@ public class LiveMatch
         request.AddHeader("Authorization", $"Bearer {Constants.AccessToken}");
         var response = await client.ExecuteGetAsync<PartyResponse>(request).ConfigureAwait(false);
         if (response.IsSuccessful) return response.Data;
-        Constants.Log.Error("GetPreMatchDetailsAsync() failed. Response: {Response}", response.ErrorException);
+        Constants.Log.Error("GetPartyDetailsAsync() failed. Response: {Response}", response.ErrorException);
         return null;
     }
 
@@ -152,13 +155,12 @@ public class LiveMatch
 
                             await Task.WhenAll(t1, t4, t6).ConfigureAwait(false);
 
-                            player.IdentityData = t1.Result;
-                            player.RankData = t4.Result;
-                            player.PlayerUiData = t6.Result;
-                            player.IgnData = await GetIgcUsernameAsync(riotPlayer.Subject, riotPlayer.PlayerIdentity.Incognito, player.PlayerUiData.PartyUuid).ConfigureAwait(false);
+                            player.IdentityData = await t1.ConfigureAwait(false);
+                            player.RankData = await t4.ConfigureAwait(false);
+                            player.PlayerUiData = await t6.ConfigureAwait(false);
+                            player.IgnData = await GetIgcUsernameAsync(riotPlayer.Subject, player.PlayerUiData.PartyUuid, riotPlayer.PlayerIdentity.Incognito).ConfigureAwait(false);
                             player.AccountLevel = !riotPlayer.PlayerIdentity.HideAccountLevel ? riotPlayer.PlayerIdentity.AccountLevel.ToString() : "-";
                             player.TeamId = "Blue";
-                            player.Active = Visibility.Visible;
                         }
                         catch (Exception e)
                         {
@@ -175,7 +177,8 @@ public class LiveMatch
                 }
 
                 var gamePodId = matchIdInfo.GamePodId;
-                if (Constants.GamePodsDictionary.TryGetValue(gamePodId, out var serverName)) MatchInfo.Server = "🌍 " + serverName;
+                var gamePods = JsonSerializer.Deserialize<Dictionary<string, string>>(await File.ReadAllTextAsync(Constants.LocalAppDataPath + "\\ValAPI\\gamepods.txt").ConfigureAwait(false));
+                if (gamePods != null && gamePods.TryGetValue(gamePodId, out var serverName)) MatchInfo.Server = "🌍 " + serverName;
             }
         }
         else
@@ -192,7 +195,11 @@ public class LiveMatch
 
                 foreach (var riotPlayer in matchIdInfo.Players)
                 {
-                    if (riotPlayer.IsCoach) continue;
+                    if (riotPlayer.IsCoach)
+                    {
+                        index++;
+                        continue;
+                    }
 
                     async Task<Player> GetPlayerInfo()
                     {
@@ -206,14 +213,14 @@ public class LiveMatch
 
                             await Task.WhenAll(t1, t3, t4, t5).ConfigureAwait(false);
 
-                            player.IdentityData = t1.Result;
-                            player.RankData = t3.Result;
-                            player.SkinData = t4.Result;
-                            player.PlayerUiData = t5.Result;
-                            player.IgnData = await GetIgcUsernameAsync(riotPlayer.Subject, riotPlayer.PlayerIdentity.Incognito, player.PlayerUiData.PartyUuid).ConfigureAwait(false);
+                            player.IdentityData = await t1.ConfigureAwait(false);
+                            player.RankData = await t3.ConfigureAwait(false);
+                            player.SkinData = await t4.ConfigureAwait(false);
+                            player.PlayerUiData = await t5.ConfigureAwait(false);
+                            player.IgnData = await GetIgcUsernameAsync(riotPlayer.Subject, player.PlayerUiData.PartyUuid, riotPlayer.PlayerIdentity.Incognito).ConfigureAwait(false);
                             player.AccountLevel = !riotPlayer.PlayerIdentity.HideAccountLevel ? riotPlayer.PlayerIdentity.AccountLevel.ToString() : "-";
                             player.TeamId = riotPlayer.TeamId;
-                            player.Active = Visibility.Visible;
+                            player.SkinsActive = Visibility.Visible;
                         }
                         catch (Exception e)
                         {
@@ -225,12 +232,12 @@ public class LiveMatch
 
                     playerTasks.Add(GetPlayerInfo());
 
-
                     index++;
                 }
 
                 var gamePodId = matchIdInfo.GamePodId;
-                if (Constants.GamePodsDictionary.TryGetValue(gamePodId, out var serverName)) MatchInfo.Server = "🌍 " + serverName;
+                var gamePods = JsonSerializer.Deserialize<Dictionary<string, string>>(await File.ReadAllTextAsync(Constants.LocalAppDataPath + "\\ValAPI\\gamepods.txt").ConfigureAwait(false));
+                if (gamePods != null && gamePods.TryGetValue(gamePodId, out var serverName)) MatchInfo.Server = "🌍 " + serverName;
             }
         }
 
@@ -298,9 +305,9 @@ public class LiveMatch
 
                     await Task.WhenAll(t1, t3, t4).ConfigureAwait(false);
 
-                    player.IdentityData = t1.Result;
-                    player.MatchHistoryData = t3.Result;
-                    player.RankData = t4.Result;
+                    player.IdentityData = await t1.ConfigureAwait(false);
+                    player.MatchHistoryData = await t3.ConfigureAwait(false);
+                    player.RankData = await t4.ConfigureAwait(false);
                     player.PlayerUiData = new PlayerUIData
                     {
                         BackgroundColour = "#252A40",
@@ -308,10 +315,9 @@ public class LiveMatch
                         PartyColour = "Transparent",
                         Puuid = riotPlayer.PlayerIdentity.Subject
                     };
-                    player.IgnData = await GetIgcUsernameAsync(riotPlayer.Subject, false, player.PlayerUiData.PartyUuid).ConfigureAwait(false);
+                    player.IgnData = await GetIgcUsernameAsync(riotPlayer.Subject, player.PlayerUiData.PartyUuid).ConfigureAwait(false);
                     player.AccountLevel = !riotPlayer.PlayerIdentity.HideAccountLevel ? riotPlayer.PlayerIdentity.AccountLevel.ToString() : "-";
                     player.TeamId = "Blue";
-                    player.Active = Visibility.Visible;
                     return player;
                 }
 
@@ -325,14 +331,13 @@ public class LiveMatch
         return playerList;
     }
 
-    private static async Task<IgnData> GetIgcUsernameAsync(Guid puuid, bool isIncognito, Guid partyId)
+    private static async Task<IgnData> GetIgcUsernameAsync(Guid puuid, Guid partyId, bool isIncognito = false)
     {
         IgnData ignData = new();
         if (isIncognito && partyId != Constants.PPartyId)
         {
             ignData.Username = "----";
-            ignData.TrackerEnabled = Visibility.Hidden;
-            ignData.TrackerDisabled = Visibility.Visible;
+            ignData.TrackerEnabled = Visibility.Collapsed;
         }
         else
         {
@@ -342,12 +347,10 @@ public class LiveMatch
                 return new IgnData
                 {
                     TrackerEnabled = Visibility.Visible,
-                    TrackerDisabled = Visibility.Collapsed,
                     TrackerUri = trackerUri,
                     Username = ignData.Username + " 🔗"
                 };
-            ignData.TrackerEnabled = Visibility.Hidden;
-            ignData.TrackerDisabled = Visibility.Visible;
+            ignData.TrackerEnabled = Visibility.Collapsed;
         }
 
         return ignData;
@@ -394,141 +397,237 @@ public class LiveMatch
         var response = await DoCachedRequestAsync(Method.Get,
             $"https://glz-{Constants.Shard}-1.{Constants.Region}.a.pvp.net/core-game/v1/matches/{Matchid}/loadouts",
             true).ConfigureAwait(false);
-        if (response.IsSuccessful)
-        {
-            var content = JsonSerializer.Deserialize<MatchLoadoutsResponse>(response.Content);
-            return await GetSkinInfoAsync(content.Loadouts[playerno].Loadout, cardid).ConfigureAwait(false);
-        }
+        if (response.IsSuccessful && response.Content != null)
+            try
+            {
+                var content = JsonSerializer.Deserialize<MatchLoadoutsResponse>(response.Content);
+                return await GetSkinInfoAsync(content.Loadouts[playerno].Loadout, cardid).ConfigureAwait(false);
+            }
+            catch (Exception e)
+            {
+                Constants.Log.Error("GetMatchSkinInfoAsync Failed: {e}", e);
+                return new SkinData();
+            }
 
         Constants.Log.Error("GetMatchSkinInfoAsync Failed: {e}", response.ErrorException);
         return new SkinData();
     }
 
-    private static async Task<SkinData> GetPreSkinInfoAsync(sbyte playerno, Guid cardid)
-    {
-        var response = await DoCachedRequestAsync(Method.Get,
-            $"https://glz-{Constants.Shard}-1.{Constants.Region}.a.pvp.net/pregame/v1/matches/{Matchid}/loadouts",
-            true).ConfigureAwait(false);
-        if (response.IsSuccessful)
-            try
-            {
-                var content = JsonSerializer.Deserialize<PreMatchLoadoutsResponse>(response.Content);
-                return await GetSkinInfoAsync(content.Loadouts[playerno], cardid);
-            }
-            catch
-            {
-                // ignored
-            }
-
-        Constants.Log.Error("GetPreSkinInfoAsync Failed: {e}", response.ErrorException);
-        return new SkinData();
-    }
-
     private static async Task<SkinData> GetSkinInfoAsync(LoadoutLoadout loadout, Guid cardid)
     {
-        Dictionary<Guid, ValCard> cards = null;
-        Dictionary<Guid, ValNameImage> sprays = null;
-        Dictionary<Guid, ValNameImage> skins = null;
+        Dictionary<Guid, ValCard> cards;
+        Dictionary<Guid, ValNameImage> sprays;
+        Dictionary<Guid, ValNameImage> buddies;
+        Dictionary<Guid, ValNameImage> skins;
         try
         {
             skins = JsonSerializer.Deserialize<Dictionary<Guid, ValNameImage>>(await File.ReadAllTextAsync(Constants.LocalAppDataPath + "\\ValAPI\\skinchromas.txt").ConfigureAwait(false));
             cards = JsonSerializer.Deserialize<Dictionary<Guid, ValCard>>(await File.ReadAllTextAsync(Constants.LocalAppDataPath + "\\ValAPI\\cards.txt").ConfigureAwait(false));
             sprays = JsonSerializer.Deserialize<Dictionary<Guid, ValNameImage>>(await File.ReadAllTextAsync(Constants.LocalAppDataPath + "\\ValAPI\\sprays.txt").ConfigureAwait(false));
+            buddies = JsonSerializer.Deserialize<Dictionary<Guid, ValNameImage>>(await File.ReadAllTextAsync(Constants.LocalAppDataPath + "\\ValAPI\\buddies.txt").ConfigureAwait(false));
+        }
+        catch (Exception e)
+        {
+            Constants.Log.Error("GetSkinInfoAsync failed; Dictionary Loading fail: {e}", e);
+            return new SkinData();
+        }
+
+        var skinData = new SkinData();
+        try
+        {
+            skinData.CardImage = cards[cardid].Image;
+            skinData.LargeCardImage = cards[cardid].FullImage;
+            skinData.CardName = cards[cardid].Name;
+            skinData.Spray1Image = sprays[loadout.Sprays.SpraySelections[0].SprayId].Image;
+            skinData.Spray1Name = sprays[loadout.Sprays.SpraySelections[0].SprayId].Name;
+            skinData.Spray2Image = sprays[loadout.Sprays.SpraySelections[1].SprayId].Image;
+            skinData.Spray2Name = sprays[loadout.Sprays.SpraySelections[1].SprayId].Name;
+            skinData.Spray3Image = sprays[loadout.Sprays.SpraySelections[2].SprayId].Image;
+            skinData.Spray3Name = sprays[loadout.Sprays.SpraySelections[2].SprayId].Name;
+
+            skinData.ClassicImage = skins[loadout.Items["29a0cfab-485b-f5d5-779a-b59f85e204a8"].Sockets["3ad1b2b2-acdb-4524-852f-954a76ddae0a"]
+                .Item.Id].Image;
+            skinData.ClassicName = skins[loadout.Items["29a0cfab-485b-f5d5-779a-b59f85e204a8"].Sockets["3ad1b2b2-acdb-4524-852f-954a76ddae0a"]
+                .Item.Id].Name;
+            skinData.ShortyImage = skins[loadout.Items["42da8ccc-40d5-affc-beec-15aa47b42eda"].Sockets["3ad1b2b2-acdb-4524-852f-954a76ddae0a"]
+                .Item.Id].Image;
+            skinData.ShortyName = skins[loadout.Items["42da8ccc-40d5-affc-beec-15aa47b42eda"].Sockets["3ad1b2b2-acdb-4524-852f-954a76ddae0a"]
+                .Item.Id].Name;
+            skinData.FrenzyImage = skins[loadout.Items["44d4e95c-4157-0037-81b2-17841bf2e8e3"].Sockets["3ad1b2b2-acdb-4524-852f-954a76ddae0a"]
+                .Item.Id].Image;
+            skinData.FrenzyName = skins[loadout.Items["44d4e95c-4157-0037-81b2-17841bf2e8e3"].Sockets["3ad1b2b2-acdb-4524-852f-954a76ddae0a"]
+                .Item.Id].Name;
+            skinData.GhostImage = skins[loadout.Items["1baa85b4-4c70-1284-64bb-6481dfc3bb4e"].Sockets["3ad1b2b2-acdb-4524-852f-954a76ddae0a"]
+                .Item.Id].Image;
+            skinData.GhostName = skins[loadout.Items["1baa85b4-4c70-1284-64bb-6481dfc3bb4e"].Sockets["3ad1b2b2-acdb-4524-852f-954a76ddae0a"]
+                .Item.Id].Name;
+            skinData.SheriffImage = skins[loadout.Items["e336c6b8-418d-9340-d77f-7a9e4cfe0702"].Sockets["3ad1b2b2-acdb-4524-852f-954a76ddae0a"]
+                .Item.Id].Image;
+            skinData.SheriffName = skins[loadout.Items["e336c6b8-418d-9340-d77f-7a9e4cfe0702"].Sockets["3ad1b2b2-acdb-4524-852f-954a76ddae0a"]
+                .Item.Id].Name;
+
+            if (loadout.Items["29a0cfab-485b-f5d5-779a-b59f85e204a8"].Sockets.TryGetValue("77258665-71d1-4623-bc72-44db9bd5b3b3", out var classicSocket))
+            {
+                skinData.ClassicBuddyImage = buddies[classicSocket.Item.Id].Image;
+                skinData.ClassicBuddyName = buddies[classicSocket.Item.Id].Name;
+            }
+
+            if (loadout.Items["42da8ccc-40d5-affc-beec-15aa47b42eda"].Sockets.TryGetValue("77258665-71d1-4623-bc72-44db9bd5b3b3", out var shortySocket))
+            {
+                skinData.ShortyBuddyImage = buddies[shortySocket.Item.Id].Image;
+                skinData.ShortyBuddyName = buddies[shortySocket.Item.Id].Name;
+            }
+
+            if (loadout.Items["44d4e95c-4157-0037-81b2-17841bf2e8e3"].Sockets.TryGetValue("77258665-71d1-4623-bc72-44db9bd5b3b3", out var frenzySocket))
+            {
+                skinData.FrenzyBuddyImage = buddies[frenzySocket.Item.Id].Image;
+                skinData.FrenzyBuddyName = buddies[frenzySocket.Item.Id].Name;
+            }
+
+            if (loadout.Items["1baa85b4-4c70-1284-64bb-6481dfc3bb4e"].Sockets.TryGetValue("77258665-71d1-4623-bc72-44db9bd5b3b3", out var ghostSocket))
+            {
+                skinData.GhostBuddyImage = buddies[ghostSocket.Item.Id].Image;
+                skinData.GhostBuddyName = buddies[ghostSocket.Item.Id].Name;
+            }
+
+            if (loadout.Items["e336c6b8-418d-9340-d77f-7a9e4cfe0702"].Sockets.TryGetValue("77258665-71d1-4623-bc72-44db9bd5b3b3", out var sheriffSocket))
+            {
+                skinData.SheriffBuddyImage = buddies[sheriffSocket.Item.Id].Image;
+                skinData.SheriffBuddyName = buddies[sheriffSocket.Item.Id].Name;
+            }
+
+            skinData.StingerImage = skins[loadout.Items["f7e1b454-4ad4-1063-ec0a-159e56b58941"].Sockets["3ad1b2b2-acdb-4524-852f-954a76ddae0a"]
+                .Item.Id].Image;
+            skinData.StingerName = skins[loadout.Items["f7e1b454-4ad4-1063-ec0a-159e56b58941"].Sockets["3ad1b2b2-acdb-4524-852f-954a76ddae0a"]
+                .Item.Id].Name;
+            skinData.SpectreImage = skins[loadout.Items["462080d1-4035-2937-7c09-27aa2a5c27a7"].Sockets["3ad1b2b2-acdb-4524-852f-954a76ddae0a"]
+                .Item.Id].Image;
+            skinData.SpectreName = skins[loadout.Items["462080d1-4035-2937-7c09-27aa2a5c27a7"].Sockets["3ad1b2b2-acdb-4524-852f-954a76ddae0a"]
+                .Item.Id].Name;
+            skinData.BuckyImage = skins[loadout.Items["910be174-449b-c412-ab22-d0873436b21b"].Sockets["3ad1b2b2-acdb-4524-852f-954a76ddae0a"]
+                .Item.Id].Image;
+            skinData.BuckyName = skins[loadout.Items["910be174-449b-c412-ab22-d0873436b21b"].Sockets["3ad1b2b2-acdb-4524-852f-954a76ddae0a"]
+                .Item.Id].Name;
+            skinData.JudgeImage = skins[loadout.Items["ec845bf4-4f79-ddda-a3da-0db3774b2794"].Sockets["3ad1b2b2-acdb-4524-852f-954a76ddae0a"]
+                .Item.Id].Image;
+            skinData.JudgeName = skins[loadout.Items["ec845bf4-4f79-ddda-a3da-0db3774b2794"].Sockets["3ad1b2b2-acdb-4524-852f-954a76ddae0a"]
+                .Item.Id].Name;
+
+            if (loadout.Items["f7e1b454-4ad4-1063-ec0a-159e56b58941"].Sockets.TryGetValue("77258665-71d1-4623-bc72-44db9bd5b3b3", out var stingerSocket))
+            {
+                skinData.StingerBuddyImage = buddies[stingerSocket.Item.Id].Image;
+                skinData.StingerBuddyName = buddies[stingerSocket.Item.Id].Name;
+            }
+
+            if (loadout.Items["462080d1-4035-2937-7c09-27aa2a5c27a7"].Sockets.TryGetValue("77258665-71d1-4623-bc72-44db9bd5b3b3", out var spectreSocket))
+            {
+                skinData.SpectreBuddyImage = buddies[spectreSocket.Item.Id].Image;
+                skinData.SpectreBuddyName = buddies[spectreSocket.Item.Id].Name;
+            }
+
+            if (loadout.Items["910be174-449b-c412-ab22-d0873436b21b"].Sockets.TryGetValue("77258665-71d1-4623-bc72-44db9bd5b3b3", out var buckySocket))
+            {
+                skinData.BuckyBuddyImage = buddies[buckySocket.Item.Id].Image;
+                skinData.BuckyBuddyName = buddies[buckySocket.Item.Id].Name;
+            }
+
+            if (loadout.Items["ec845bf4-4f79-ddda-a3da-0db3774b2794"].Sockets.TryGetValue("77258665-71d1-4623-bc72-44db9bd5b3b3", out var judgeSocket))
+            {
+                skinData.JudgeBuddyImage = buddies[judgeSocket.Item.Id].Image;
+                skinData.JudgeBuddyName = buddies[judgeSocket.Item.Id].Name;
+            }
+
+            skinData.BulldogImage = skins[loadout.Items["ae3de142-4d85-2547-dd26-4e90bed35cf7"].Sockets["3ad1b2b2-acdb-4524-852f-954a76ddae0a"]
+                .Item.Id].Image;
+            skinData.BulldogName = skins[loadout.Items["ae3de142-4d85-2547-dd26-4e90bed35cf7"].Sockets["3ad1b2b2-acdb-4524-852f-954a76ddae0a"]
+                .Item.Id].Name;
+            skinData.GuardianImage = skins[loadout.Items["4ade7faa-4cf1-8376-95ef-39884480959b"].Sockets["3ad1b2b2-acdb-4524-852f-954a76ddae0a"]
+                .Item.Id].Image;
+            skinData.GuardianName = skins[loadout.Items["4ade7faa-4cf1-8376-95ef-39884480959b"].Sockets["3ad1b2b2-acdb-4524-852f-954a76ddae0a"]
+                .Item.Id].Name;
+            skinData.PhantomImage = skins[loadout.Items["ee8e8d15-496b-07ac-e5f6-8fae5d4c7b1a"].Sockets["3ad1b2b2-acdb-4524-852f-954a76ddae0a"]
+                .Item.Id].Image;
+            skinData.PhantomName = skins[loadout.Items["ee8e8d15-496b-07ac-e5f6-8fae5d4c7b1a"].Sockets["3ad1b2b2-acdb-4524-852f-954a76ddae0a"]
+                .Item.Id].Name;
+            skinData.VandalImage = skins[loadout.Items["9c82e19d-4575-0200-1a81-3eacf00cf872"].Sockets["3ad1b2b2-acdb-4524-852f-954a76ddae0a"]
+                .Item.Id].Image;
+            skinData.VandalName = skins[loadout.Items["9c82e19d-4575-0200-1a81-3eacf00cf872"].Sockets["3ad1b2b2-acdb-4524-852f-954a76ddae0a"]
+                .Item.Id].Name;
+
+            if (loadout.Items["ae3de142-4d85-2547-dd26-4e90bed35cf7"].Sockets.TryGetValue("77258665-71d1-4623-bc72-44db9bd5b3b3", out var bulldogSocket))
+            {
+                skinData.BulldogBuddyImage = buddies[bulldogSocket.Item.Id].Image;
+                skinData.BulldogBuddyName = buddies[bulldogSocket.Item.Id].Name;
+            }
+
+            if (loadout.Items["4ade7faa-4cf1-8376-95ef-39884480959b"].Sockets.TryGetValue("77258665-71d1-4623-bc72-44db9bd5b3b3", out var guardianSocket))
+            {
+                skinData.GuardianBuddyImage = buddies[guardianSocket.Item.Id].Image;
+                skinData.GuardianBuddyName = buddies[guardianSocket.Item.Id].Name;
+            }
+
+            if (loadout.Items["ee8e8d15-496b-07ac-e5f6-8fae5d4c7b1a"].Sockets.TryGetValue("77258665-71d1-4623-bc72-44db9bd5b3b3", out var phantomSocket))
+            {
+                skinData.PhantomBuddyImage = buddies[phantomSocket.Item.Id].Image;
+                skinData.PhantomBuddyName = buddies[phantomSocket.Item.Id].Name;
+            }
+
+            if (loadout.Items["9c82e19d-4575-0200-1a81-3eacf00cf872"].Sockets.TryGetValue("77258665-71d1-4623-bc72-44db9bd5b3b3", out var vandalSocket))
+            {
+                skinData.VandalBuddyImage = buddies[vandalSocket.Item.Id].Image;
+                skinData.VandalBuddyName = buddies[vandalSocket.Item.Id].Name;
+            }
+
+            skinData.MarshalImage = skins[loadout.Items["c4883e50-4494-202c-3ec3-6b8a9284f00b"].Sockets["3ad1b2b2-acdb-4524-852f-954a76ddae0a"]
+                .Item.Id].Image;
+            skinData.MarshalName = skins[loadout.Items["c4883e50-4494-202c-3ec3-6b8a9284f00b"].Sockets["3ad1b2b2-acdb-4524-852f-954a76ddae0a"]
+                .Item.Id].Name;
+            skinData.OperatorImage = skins[loadout.Items["a03b24d3-4319-996d-0f8c-94bbfba1dfc7"].Sockets["3ad1b2b2-acdb-4524-852f-954a76ddae0a"]
+                .Item.Id].Image;
+            skinData.OperatorName = skins[loadout.Items["a03b24d3-4319-996d-0f8c-94bbfba1dfc7"].Sockets["3ad1b2b2-acdb-4524-852f-954a76ddae0a"]
+                .Item.Id].Name;
+            skinData.AresImage = skins[loadout.Items["55d8a0f4-4274-ca67-fe2c-06ab45efdf58"].Sockets["3ad1b2b2-acdb-4524-852f-954a76ddae0a"]
+                .Item.Id].Image;
+            skinData.AresName = skins[loadout.Items["55d8a0f4-4274-ca67-fe2c-06ab45efdf58"].Sockets["3ad1b2b2-acdb-4524-852f-954a76ddae0a"]
+                .Item.Id].Name;
+            skinData.OdinImage = skins[loadout.Items["63e6c2b6-4a8e-869c-3d4c-e38355226584"].Sockets["3ad1b2b2-acdb-4524-852f-954a76ddae0a"]
+                .Item.Id].Image;
+            skinData.OdinName = skins[loadout.Items["63e6c2b6-4a8e-869c-3d4c-e38355226584"].Sockets["3ad1b2b2-acdb-4524-852f-954a76ddae0a"]
+                .Item.Id].Name;
+
+            if (loadout.Items["c4883e50-4494-202c-3ec3-6b8a9284f00b"].Sockets.TryGetValue("77258665-71d1-4623-bc72-44db9bd5b3b3", out var marshalSocket))
+            {
+                skinData.MarshalBuddyImage = buddies[marshalSocket.Item.Id].Image;
+                skinData.MarshalBuddyName = buddies[marshalSocket.Item.Id].Name;
+            }
+
+            if (loadout.Items["a03b24d3-4319-996d-0f8c-94bbfba1dfc7"].Sockets.TryGetValue("77258665-71d1-4623-bc72-44db9bd5b3b3", out var operatorSocket))
+            {
+                skinData.OperatorBuddyImage = buddies[operatorSocket.Item.Id].Image;
+                skinData.OperatorBuddyName = buddies[operatorSocket.Item.Id].Name;
+            }
+
+            if (loadout.Items["55d8a0f4-4274-ca67-fe2c-06ab45efdf58"].Sockets.TryGetValue("77258665-71d1-4623-bc72-44db9bd5b3b3", out var aresSocket))
+            {
+                skinData.AresBuddyImage = buddies[aresSocket.Item.Id].Image;
+                skinData.AresBuddyName = buddies[aresSocket.Item.Id].Name;
+            }
+
+            if (loadout.Items["63e6c2b6-4a8e-869c-3d4c-e38355226584"].Sockets.TryGetValue("77258665-71d1-4623-bc72-44db9bd5b3b3", out var odinSocket))
+            {
+                skinData.OdinBuddyImage = buddies[odinSocket.Item.Id].Image;
+                skinData.OdinBuddyName = buddies[odinSocket.Item.Id].Name;
+            }
+
+            skinData.MeleeImage = skins[loadout.Items["2f59173c-4bed-b6c3-2191-dea9b58be9c7"].Sockets["3ad1b2b2-acdb-4524-852f-954a76ddae0a"]
+                .Item.Id].Image;
+            skinData.MeleeName = skins[loadout.Items["2f59173c-4bed-b6c3-2191-dea9b58be9c7"].Sockets["3ad1b2b2-acdb-4524-852f-954a76ddae0a"]
+                .Item.Id].Name;
         }
         catch (Exception e)
         {
             Constants.Log.Error("GetSkinInfoAsync failed: {e}", e);
         }
-
-        var skinData = new SkinData
-        {
-            CardImage = cards[cardid].Image,
-            LargeCardImage = cards[cardid].FullImage,
-            CardName = cards[cardid].Name,
-            Spray1Image = sprays[loadout.Sprays.SpraySelections[0].SprayId].Image,
-            Spray1Name = sprays[loadout.Sprays.SpraySelections[0].SprayId].Name,
-            Spray2Image = sprays[loadout.Sprays.SpraySelections[1].SprayId].Image,
-            Spray2Name = sprays[loadout.Sprays.SpraySelections[1].SprayId].Name,
-            Spray3Image = sprays[loadout.Sprays.SpraySelections[2].SprayId].Image,
-            Spray3Name = sprays[loadout.Sprays.SpraySelections[2].SprayId].Name,
-
-            ClassicImage = skins[loadout.Items["29a0cfab-485b-f5d5-779a-b59f85e204a8"].Sockets["3ad1b2b2-acdb-4524-852f-954a76ddae0a"]
-                .Item.Id].Image,
-            ClassicName = skins[loadout.Items["29a0cfab-485b-f5d5-779a-b59f85e204a8"].Sockets["3ad1b2b2-acdb-4524-852f-954a76ddae0a"]
-                .Item.Id].Name,
-            ShortyImage = skins[loadout.Items["42da8ccc-40d5-affc-beec-15aa47b42eda"].Sockets["3ad1b2b2-acdb-4524-852f-954a76ddae0a"]
-                .Item.Id].Image,
-            ShortyName = skins[loadout.Items["42da8ccc-40d5-affc-beec-15aa47b42eda"].Sockets["3ad1b2b2-acdb-4524-852f-954a76ddae0a"]
-                .Item.Id].Name,
-            FrenzyImage = skins[loadout.Items["44d4e95c-4157-0037-81b2-17841bf2e8e3"].Sockets["3ad1b2b2-acdb-4524-852f-954a76ddae0a"]
-                .Item.Id].Image,
-            FrenzyName = skins[loadout.Items["44d4e95c-4157-0037-81b2-17841bf2e8e3"].Sockets["3ad1b2b2-acdb-4524-852f-954a76ddae0a"]
-                .Item.Id].Name,
-            GhostImage = skins[loadout.Items["1baa85b4-4c70-1284-64bb-6481dfc3bb4e"].Sockets["3ad1b2b2-acdb-4524-852f-954a76ddae0a"]
-                .Item.Id].Image,
-            GhostName = skins[loadout.Items["1baa85b4-4c70-1284-64bb-6481dfc3bb4e"].Sockets["3ad1b2b2-acdb-4524-852f-954a76ddae0a"]
-                .Item.Id].Name,
-            SheriffImage = skins[loadout.Items["e336c6b8-418d-9340-d77f-7a9e4cfe0702"].Sockets["3ad1b2b2-acdb-4524-852f-954a76ddae0a"]
-                .Item.Id].Image,
-            SheriffName = skins[loadout.Items["e336c6b8-418d-9340-d77f-7a9e4cfe0702"].Sockets["3ad1b2b2-acdb-4524-852f-954a76ddae0a"]
-                .Item.Id].Name,
-
-            StingerImage = skins[loadout.Items["f7e1b454-4ad4-1063-ec0a-159e56b58941"].Sockets["3ad1b2b2-acdb-4524-852f-954a76ddae0a"]
-                .Item.Id].Image,
-            StingerName = skins[loadout.Items["f7e1b454-4ad4-1063-ec0a-159e56b58941"].Sockets["3ad1b2b2-acdb-4524-852f-954a76ddae0a"]
-                .Item.Id].Name,
-            SpectreImage = skins[loadout.Items["462080d1-4035-2937-7c09-27aa2a5c27a7"].Sockets["3ad1b2b2-acdb-4524-852f-954a76ddae0a"]
-                .Item.Id].Image,
-            SpectreName = skins[loadout.Items["462080d1-4035-2937-7c09-27aa2a5c27a7"].Sockets["3ad1b2b2-acdb-4524-852f-954a76ddae0a"]
-                .Item.Id].Name,
-            BuckyImage = skins[loadout.Items["910be174-449b-c412-ab22-d0873436b21b"].Sockets["3ad1b2b2-acdb-4524-852f-954a76ddae0a"]
-                .Item.Id].Image,
-            BuckyName = skins[loadout.Items["910be174-449b-c412-ab22-d0873436b21b"].Sockets["3ad1b2b2-acdb-4524-852f-954a76ddae0a"]
-                .Item.Id].Name,
-            JudgeImage = skins[loadout.Items["ec845bf4-4f79-ddda-a3da-0db3774b2794"].Sockets["3ad1b2b2-acdb-4524-852f-954a76ddae0a"]
-                .Item.Id].Image,
-            JudgeName = skins[loadout.Items["ec845bf4-4f79-ddda-a3da-0db3774b2794"].Sockets["3ad1b2b2-acdb-4524-852f-954a76ddae0a"]
-                .Item.Id].Name,
-
-            BulldogImage = skins[loadout.Items["ae3de142-4d85-2547-dd26-4e90bed35cf7"].Sockets["3ad1b2b2-acdb-4524-852f-954a76ddae0a"]
-                .Item.Id].Image,
-            BulldogName = skins[loadout.Items["ae3de142-4d85-2547-dd26-4e90bed35cf7"].Sockets["3ad1b2b2-acdb-4524-852f-954a76ddae0a"]
-                .Item.Id].Name,
-            GuardianImage = skins[loadout.Items["4ade7faa-4cf1-8376-95ef-39884480959b"].Sockets["3ad1b2b2-acdb-4524-852f-954a76ddae0a"]
-                .Item.Id].Image,
-            GuardianName = skins[loadout.Items["4ade7faa-4cf1-8376-95ef-39884480959b"].Sockets["3ad1b2b2-acdb-4524-852f-954a76ddae0a"]
-                .Item.Id].Name,
-            PhantomImage = skins[loadout.Items["ee8e8d15-496b-07ac-e5f6-8fae5d4c7b1a"].Sockets["3ad1b2b2-acdb-4524-852f-954a76ddae0a"]
-                .Item.Id].Image,
-            PhantomName = skins[loadout.Items["ee8e8d15-496b-07ac-e5f6-8fae5d4c7b1a"].Sockets["3ad1b2b2-acdb-4524-852f-954a76ddae0a"]
-                .Item.Id].Name,
-            VandalImage = skins[loadout.Items["9c82e19d-4575-0200-1a81-3eacf00cf872"].Sockets["3ad1b2b2-acdb-4524-852f-954a76ddae0a"]
-                .Item.Id].Image,
-            VandalName = skins[loadout.Items["9c82e19d-4575-0200-1a81-3eacf00cf872"].Sockets["3ad1b2b2-acdb-4524-852f-954a76ddae0a"]
-                .Item.Id].Name,
-
-            MarshalImage = skins[loadout.Items["c4883e50-4494-202c-3ec3-6b8a9284f00b"].Sockets["3ad1b2b2-acdb-4524-852f-954a76ddae0a"]
-                .Item.Id].Image,
-            MarshalName = skins[loadout.Items["c4883e50-4494-202c-3ec3-6b8a9284f00b"].Sockets["3ad1b2b2-acdb-4524-852f-954a76ddae0a"]
-                .Item.Id].Name,
-            OperatorImage = skins[loadout.Items["a03b24d3-4319-996d-0f8c-94bbfba1dfc7"].Sockets["3ad1b2b2-acdb-4524-852f-954a76ddae0a"]
-                .Item.Id].Image,
-            OperatorName = skins[loadout.Items["a03b24d3-4319-996d-0f8c-94bbfba1dfc7"].Sockets["3ad1b2b2-acdb-4524-852f-954a76ddae0a"]
-                .Item.Id].Name,
-            AresImage = skins[loadout.Items["55d8a0f4-4274-ca67-fe2c-06ab45efdf58"].Sockets["3ad1b2b2-acdb-4524-852f-954a76ddae0a"]
-                .Item.Id].Image,
-            AresName = skins[loadout.Items["55d8a0f4-4274-ca67-fe2c-06ab45efdf58"].Sockets["3ad1b2b2-acdb-4524-852f-954a76ddae0a"]
-                .Item.Id].Name,
-            OdinImage = skins[loadout.Items["63e6c2b6-4a8e-869c-3d4c-e38355226584"].Sockets["3ad1b2b2-acdb-4524-852f-954a76ddae0a"]
-                .Item.Id].Image,
-            OdinName = skins[loadout.Items["63e6c2b6-4a8e-869c-3d4c-e38355226584"].Sockets["3ad1b2b2-acdb-4524-852f-954a76ddae0a"]
-                .Item.Id].Name,
-            MeleeImage = skins[loadout.Items["2f59173c-4bed-b6c3-2191-dea9b58be9c7"].Sockets["3ad1b2b2-acdb-4524-852f-954a76ddae0a"]
-                .Item.Id].Image,
-            MeleeName = skins[loadout.Items["2f59173c-4bed-b6c3-2191-dea9b58be9c7"].Sockets["3ad1b2b2-acdb-4524-852f-954a76ddae0a"]
-                .Item.Id].Name
-        };
-        if (skinData == null) Constants.Log.Error("GetSkinInfoAsync failed: skinData is null");
 
         return skinData;
     }
@@ -548,7 +647,7 @@ public class LiveMatch
             if (puuid != Guid.Empty)
             {
                 var response = await DoCachedRequestAsync(Method.Get,
-                    $"https://pd.{Constants.Region}.a.pvp.net/mmr/v1/players/{puuid}/competitiveupdates?queue=competitive",
+                    $"https://pd.{Constants.Region}.a.pvp.net/mmr/v1/players/{puuid}/competitiveupdates?startIndex=0&endIndex=3&queue=competitive",
                     true).ConfigureAwait(false);
                 if (!response.IsSuccessful)
                 {
@@ -632,15 +731,19 @@ public class LiveMatch
                 DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingDefault
             };
             var content = JsonSerializer.Deserialize<MmrResponse>(response.Content, options);
-            int rank, prank, pprank, ppprank;
+            int rank = 0, pRank = 0, ppRank = 0, pppRank = 0, peakRank = 0;
+            var peakSeasonId = "";
             try
             {
                 if (content.QueueSkills.Competitive.SeasonalInfoBySeasonId.Act.TryGetValue(seasonData.CurrentSeason.ToString(), out var currentActJsonElement))
                 {
                     var currentAct = currentActJsonElement.Deserialize<ActInfo>();
                     rank = currentAct.CompetitiveTier;
-
                     if (rank is 1 or 2) rank = 0;
+
+                    rankData.RankStats = $"{Resources.WR} {currentAct.NumberOfWinsWithPlacements}/{currentAct.NumberOfGames} ({Math.Round((decimal) currentAct.NumberOfWinsWithPlacements / currentAct.NumberOfGames * 100, 1)}%)";
+                    peakRank = rank;
+                    peakSeasonId = currentAct.SeasonId;
                 }
                 else
                 {
@@ -656,99 +759,93 @@ public class LiveMatch
             {
                 if (content.QueueSkills.Competitive.SeasonalInfoBySeasonId.Act.TryGetValue(seasonData.PreviousSeason.ToString(), out var pActJsonElement))
                 {
-                    var PAct = pActJsonElement.Deserialize<ActInfo>();
-                    switch (PAct.CompetitiveTier)
+                    var pAct = pActJsonElement.Deserialize<ActInfo>();
+
+                    pRank = pAct.WinsByTier.Keys.Select(tier => Convert.ToInt32(tier)).Prepend(pRank).Max();
+                    switch (pRank)
                     {
                         case 1 or 2:
-                            prank = 0;
+                            pRank = 0;
                             break;
                         case > 20:
                         {
-                            if (Constants.BeforeAscendantSeasons.Contains(seasonData.PreviousSeason))
-                                prank = PAct.CompetitiveTier + 3;
-                            else
-                                prank = PAct.CompetitiveTier;
+                            if (Constants.BeforeAscendantSeasons.Contains(seasonData.PreviousSeason)) pRank += 3;
                             break;
                         }
-                        default:
-                            prank = PAct.CompetitiveTier;
-                            break;
                     }
+
+                    rankData.PreviousrankStats = $"{Resources.WR} {pAct.NumberOfWinsWithPlacements}/{pAct.NumberOfGames} ({Math.Round((decimal) pAct.NumberOfWinsWithPlacements / pAct.NumberOfGames * 100, 1)}%)";
                 }
                 else
                 {
-                    prank = 0;
+                    pRank = 0;
                 }
             }
             catch (Exception)
             {
-                prank = 0;
+                pRank = 0;
             }
 
             try
             {
                 if (content.QueueSkills.Competitive.SeasonalInfoBySeasonId.Act.TryGetValue(seasonData.PreviouspreviousSeason.ToString(), out var ppActJsonElement))
                 {
-                    var PPAct = ppActJsonElement.Deserialize<ActInfo>();
-                    switch (PPAct.CompetitiveTier)
+                    var ppAct = ppActJsonElement.Deserialize<ActInfo>();
+
+                    ppRank = ppAct.WinsByTier.Keys.Select(tier => Convert.ToInt32(tier)).Prepend(ppRank).Max();
+                    switch (ppRank)
                     {
                         case 1 or 2:
-                            pprank = 0;
+                            ppRank = 0;
                             break;
                         case > 20:
                         {
-                            if (Constants.BeforeAscendantSeasons.Contains(seasonData.PreviouspreviousSeason))
-                                pprank = PPAct.CompetitiveTier + 3;
-                            else
-                                pprank = PPAct.CompetitiveTier;
+                            if (Constants.BeforeAscendantSeasons.Contains(seasonData.PreviouspreviousSeason)) ppRank += 3;
                             break;
                         }
-                        default:
-                            pprank = PPAct.CompetitiveTier;
-                            break;
                     }
+
+                    rankData.PreviouspreviousStats = $"{Resources.WR} {ppAct.NumberOfWinsWithPlacements}/{ppAct.NumberOfGames} ({Math.Round((decimal) ppAct.NumberOfWinsWithPlacements / ppAct.NumberOfGames * 100, 1)}%)";
                 }
                 else
                 {
-                    pprank = 0;
+                    ppRank = 0;
                 }
             }
             catch (Exception)
             {
-                pprank = 0;
+                ppRank = 0;
             }
 
             try
             {
                 if (content.QueueSkills.Competitive.SeasonalInfoBySeasonId.Act.TryGetValue(seasonData.PreviouspreviouspreviousSeason.ToString(), out var pppActJsonElement))
                 {
-                    var PPPAct = pppActJsonElement.Deserialize<ActInfo>();
-                    switch (PPPAct.CompetitiveTier)
+                    var pppAct = pppActJsonElement.Deserialize<ActInfo>();
+
+                    pppRank = pppAct.WinsByTier.Keys.Select(tier => Convert.ToInt32(tier)).Prepend(pppRank).Max();
+                    switch (pppRank)
                     {
                         case 1 or 2:
-                            ppprank = 0;
+                            pppRank = 0;
                             break;
                         case > 20:
                         {
-                            if (Constants.BeforeAscendantSeasons.Contains(seasonData.PreviouspreviouspreviousSeason))
-                                ppprank = PPPAct.CompetitiveTier + 3;
-                            else
-                                ppprank = PPPAct.CompetitiveTier;
+                            if (Constants.BeforeAscendantSeasons.Contains(seasonData.PreviouspreviouspreviousSeason)) pppRank += 3;
                             break;
                         }
-                        default:
-                            ppprank = PPPAct.CompetitiveTier;
-                            break;
                     }
+
+                    rankData.PreviouspreviouspreviousStats = $"{Resources.WR} {pppAct.NumberOfWinsWithPlacements}/{pppAct.NumberOfGames} ({Math.Round((decimal) pppAct.NumberOfWinsWithPlacements / pppAct.NumberOfGames * 100, 1)}%)";
                 }
                 else
                 {
-                    ppprank = 0;
+                    pppRank = 0;
                 }
             }
             catch (Exception)
             {
-                ppprank = 0;
+                pppRank = 0;
             }
 
             if (rank >= 24)
@@ -774,6 +871,82 @@ public class LiveMatch
                 }
             }
 
+            var wins = 0;
+            var total = 0;
+            try
+            {
+                foreach (var season in content.QueueSkills.Competitive.SeasonalInfoBySeasonId.Act.Select(act => act.Value.Deserialize<ActInfo>()).Where(season => season != null))
+                {
+                    try
+                    {
+                        foreach (var tier in season.WinsByTier.Keys)
+                            if (Constants.BeforeAscendantSeasons.Contains(new Guid(season.SeasonId)) && Convert.ToInt32(tier) > 20)
+                            {
+                                if (Convert.ToInt32(tier) <= peakRank) continue;
+                                peakRank = Convert.ToInt32(tier) + 3;
+                                peakSeasonId = season.SeasonId;
+                            }
+                            else
+                            {
+                                if (Convert.ToInt32(tier) <= peakRank) continue;
+                                peakRank = Convert.ToInt32(tier);
+                                peakSeasonId = season.SeasonId;
+                            }
+                    }
+                    catch (Exception)
+                    {
+                        // ignored
+                    }
+
+                    try
+                    {
+                        wins += season.NumberOfWinsWithPlacements;
+                        total += season.NumberOfGames;
+                    }
+                    catch (Exception)
+                    {
+                        // ignored
+                    }
+                }
+
+                rankData.WinRate = (int) Math.Round((decimal) wins / total * 100);
+            }
+            catch (Exception e)
+            {
+                Constants.Log.Error("GetPlayerHistoryAsync Failed; Peak rank calculation error: {e}", e);
+            }
+
+            try
+            {
+                var contentResponse = await DoCachedRequestAsync(Method.Get,
+                    $"https://shared.{Constants.Region}.a.pvp.net/content-service/v3/content", true).ConfigureAwait(false);
+                if (contentResponse.Content != null && contentResponse.IsSuccessful)
+                {
+                    var contentContent = JsonSerializer.Deserialize<ContentResponse>(contentResponse.Content);
+
+                    var actFound = false;
+                    foreach (var season in contentContent.Seasons)
+                    {
+                        if (season.Id.ToString() == peakSeasonId)
+                        {
+                            rankData.PeakRankAct = season.Name;
+                            actFound = true;
+                        }
+
+                        if (!actFound || season.Type != "episode") continue;
+                        rankData.PeakRankEpisode = season.Name;
+                        break;
+                    }
+                }
+
+            }
+            catch (Exception e)
+            {
+                Constants.Log.Error("GetPlayerHistoryAsync Failed; Peak rank ES calculation error: {e}", e);
+            }
+
+
+
             try
             {
                 var ranks = JsonSerializer.Deserialize<Dictionary<int, string>>(await File.ReadAllTextAsync(Constants.LocalAppDataPath + "\\ValAPI\\competitivetiers.txt").ConfigureAwait(false));
@@ -782,17 +955,21 @@ public class LiveMatch
                 rankData.RankImage = new Uri(Constants.LocalAppDataPath + $"\\ValAPI\\ranksimg\\{rank}.png");
                 rankData.RankName = rank0;
 
-                ranks.TryGetValue(prank, out var rank1);
-                rankData.PreviousrankImage = new Uri(Constants.LocalAppDataPath + $"\\ValAPI\\ranksimg\\{prank}.png");
+                ranks.TryGetValue(pRank, out var rank1);
+                rankData.PreviousrankImage = new Uri(Constants.LocalAppDataPath + $"\\ValAPI\\ranksimg\\{pRank}.png");
                 rankData.PreviousrankName = rank1;
 
-                ranks.TryGetValue(pprank, out var rank2);
-                rankData.PreviouspreviousrankImage = new Uri(Constants.LocalAppDataPath + $"\\ValAPI\\ranksimg\\{pprank}.png");
+                ranks.TryGetValue(ppRank, out var rank2);
+                rankData.PreviouspreviousrankImage = new Uri(Constants.LocalAppDataPath + $"\\ValAPI\\ranksimg\\{ppRank}.png");
                 rankData.PreviouspreviousrankName = rank2;
 
-                ranks.TryGetValue(ppprank, out var rank3);
-                rankData.PreviouspreviouspreviousrankImage = new Uri(Constants.LocalAppDataPath + $"\\ValAPI\\ranksimg\\{ppprank}.png");
+                ranks.TryGetValue(pppRank, out var rank3);
+                rankData.PreviouspreviouspreviousrankImage = new Uri(Constants.LocalAppDataPath + $"\\ValAPI\\ranksimg\\{pppRank}.png");
                 rankData.PreviouspreviouspreviousrankName = rank3;
+
+                ranks.TryGetValue(peakRank, out var peakRank0);
+                rankData.PeakRankImage = new Uri(Constants.LocalAppDataPath + $"\\ValAPI\\ranksimg\\{peakRank}.png");
+                rankData.PeakRankName = peakRank0 + " ("+rankData.PeakRankEpisode + " - " + rankData.PeakRankAct+")";
             }
             catch (Exception e)
             {
@@ -812,27 +989,30 @@ public class LiveMatch
         var seasonData = new SeasonData();
         try
         {
-            RestClient client = new($"https://shared.{Constants.Region}.a.pvp.net/content-service/v3/content");
-            var request = new RestRequest().AddHeader("X-Riot-Entitlements-JWT", Constants.EntitlementToken)
-                .AddHeader("Authorization", $"Bearer {Constants.AccessToken}")
-                .AddHeader("X-Riot-ClientPlatform",
-                    "ew0KCSJwbGF0Zm9ybVR5cGUiOiAiUEMiLA0KCSJwbGF0Zm9ybU9TIjogIldpbmRvd3MiLA0KCSJwbGF0Zm9ybU9TVmVyc2lvbiI6ICIxMC4wLjE5MDQyLjEuMjU2LjY0Yml0IiwNCgkicGxhdGZvcm1DaGlwc2V0IjogIlVua25vd24iDQp9")
-                .AddHeader("X-Riot-ClientVersion", Constants.Version);
-            client.UseSystemTextJson(new JsonSerializerOptions
-            {
-                DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingDefault
-            });
-            var response = await client.ExecuteGetAsync<ContentResponse>(request).ConfigureAwait(false);
-            sbyte index = 0;
-            sbyte currentindex = 0;
-
-            if (!response.IsSuccessful)
+            // RestClient client = new($"https://shared.{Constants.Region}.a.pvp.net/content-service/v3/content");
+            // var request = new RestRequest().AddHeader("X-Riot-Entitlements-JWT", Constants.EntitlementToken)
+            //     .AddHeader("Authorization", $"Bearer {Constants.AccessToken}")
+            //     .AddHeader("X-Riot-ClientPlatform",
+            //         "ew0KCSJwbGF0Zm9ybVR5cGUiOiAiUEMiLA0KCSJwbGF0Zm9ybU9TIjogIldpbmRvd3MiLA0KCSJwbGF0Zm9ybU9TVmVyc2lvbiI6ICIxMC4wLjE5MDQyLjEuMjU2LjY0Yml0IiwNCgkicGxhdGZvcm1DaGlwc2V0IjogIlVua25vd24iDQp9")
+            //     .AddHeader("X-Riot-ClientVersion", Constants.Version);
+            // client.UseSystemTextJson(new JsonSerializerOptions
+            // {
+            //     DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingDefault
+            // });
+            // var response = await client.ExecuteGetAsync<ContentResponse>(request).ConfigureAwait(false);
+            var response = await DoCachedRequestAsync(Method.Get,
+                $"https://shared.{Constants.Region}.a.pvp.net/content-service/v3/content", true).ConfigureAwait(false);
+            if (response.Content == null || !response.IsSuccessful)
             {
                 Constants.Log.Error("GetSeasonsAsync Failed: {e}", response.ErrorException);
                 return seasonData;
             }
 
-            foreach (var season in response.Data.Seasons)
+            var content = JsonSerializer.Deserialize<ContentResponse>(response.Content);
+
+            sbyte index = 0;
+            sbyte currentindex = 0;
+            foreach (var season in content.Seasons)
             {
                 if (season.IsActive & (season.Type == "act"))
                 {
@@ -845,36 +1025,36 @@ public class LiveMatch
             }
 
             currentindex--;
-            if (response.Data.Seasons[currentindex].Type == "act")
+            if (content.Seasons[currentindex].Type == "act")
             {
-                seasonData.PreviousSeason = response.Data.Seasons[currentindex].Id;
+                seasonData.PreviousSeason = content.Seasons[currentindex].Id;
             }
             else
             {
                 currentindex--;
-                seasonData.PreviousSeason = response.Data.Seasons[currentindex].Id;
+                seasonData.PreviousSeason = content.Seasons[currentindex].Id;
             }
 
             currentindex--;
-            if (response.Data.Seasons[currentindex].Type == "act")
+            if (content.Seasons[currentindex].Type == "act")
             {
-                seasonData.PreviouspreviousSeason = response.Data.Seasons[currentindex].Id;
+                seasonData.PreviouspreviousSeason = content.Seasons[currentindex].Id;
             }
             else
             {
                 currentindex--;
-                seasonData.PreviouspreviousSeason = response.Data.Seasons[currentindex].Id;
+                seasonData.PreviouspreviousSeason = content.Seasons[currentindex].Id;
             }
 
             currentindex--;
-            if (response.Data.Seasons[currentindex].Type == "act")
+            if (content.Seasons[currentindex].Type == "act")
             {
-                seasonData.PreviouspreviouspreviousSeason = response.Data.Seasons[currentindex].Id;
+                seasonData.PreviouspreviouspreviousSeason = content.Seasons[currentindex].Id;
             }
             else
             {
                 currentindex--;
-                seasonData.PreviouspreviouspreviousSeason = response.Data.Seasons[currentindex].Id;
+                seasonData.PreviouspreviouspreviousSeason = content.Seasons[currentindex].Id;
             }
         }
         catch (Exception e)
@@ -888,6 +1068,9 @@ public class LiveMatch
 
     private static async Task<Uri> TrackerAsync(string username)
     {
+        // Temporarily disabled
+        return null;
+
         try
         {
             if (!string.IsNullOrEmpty(username))
@@ -897,6 +1080,7 @@ public class LiveMatch
                 var response = await DoCachedRequestAsync(Method.Get,
                     url.ToString(),
                     false).ConfigureAwait(false);
+
                 var numericStatusCode = (short) response.StatusCode;
 
                 if (numericStatusCode == 200) return url;

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
 using System.Reflection;
 using System.Resources;
 using System.Threading;
@@ -91,7 +92,8 @@ public partial class Settings : UserControl
         Thread.CurrentThread.CurrentCulture = _languageList[index];
         Thread.CurrentThread.CurrentUICulture = _languageList[index];
         Properties.Settings.Default.Language = _languageList[index].TwoLetterISOLanguageName;
-        UpdateFilesAsync().ConfigureAwait(false);
+        if (File.Exists(Constants.LocalAppDataPath + "\\ValAPI\\version.txt"))
+            File.Delete(Constants.LocalAppDataPath + "\\ValAPI\\version.txt");
         Application.Current.Shutdown();
         System.Windows.Forms.Application.Restart();
     }
@@ -121,14 +123,11 @@ public partial class Settings : UserControl
 
     private async void LanguageList_OnDropDownOpenedAsync(object sender, EventArgs e)
     {
-        Mouse.OverrideCursor = Cursors.Wait;
-        if (LanguageCombo.Items.Count == 0)
-            foreach (var language in await GetAvailableCulturesAsync().ConfigureAwait(false))
-            {
-                LanguageCombo.Items.Add(language.NativeName);
-                _languageList.Add(language);
-            }
-
-        Mouse.OverrideCursor = Cursors.Arrow;
+        if (LanguageCombo.Items.Count != 0) return;
+        foreach (var language in await GetAvailableCulturesAsync().ConfigureAwait(false))
+        {
+            LanguageCombo.Items.Add(language.NativeName);
+            _languageList.Add(language);
+        }
     }
 }

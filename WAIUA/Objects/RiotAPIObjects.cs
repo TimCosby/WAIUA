@@ -282,15 +282,6 @@ public class MatchLoadoutsResponse
     [JsonPropertyName("Loadouts")] public LoadoutElement[] Loadouts { get; set; }
 }
 
-public class PreMatchLoadoutsResponse
-{
-    [JsonPropertyName("Loadouts")] public LoadoutLoadout[] Loadouts { get; set; }
-
-    [JsonPropertyName("LoadoutsValid")]
-    [JsonIgnore]
-    public bool LoadoutsValid { get; set; }
-}
-
 public class LoadoutElement
 {
     [JsonPropertyName("CharacterID")]

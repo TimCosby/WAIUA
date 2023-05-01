@@ -148,7 +148,7 @@ public class ValApiSkins
 
     [JsonPropertyName("assetPath")] public string AssetPath { get; set; }
 
-    public Dictionary<string, JsonElement>? ExtensionData { get; set; }
+    [JsonExtensionData] public Dictionary<string, JsonElement>? ExtensionData { get; set; }
 }
 
 public class ValApiCards
@@ -177,10 +177,10 @@ public class ValApiSpraysResponse
 {
     [JsonPropertyName("status")] public long Status { get; set; }
 
-    [JsonPropertyName("data")] public Datum[] Data { get; set; }
+    [JsonPropertyName("data")] public ValApiSprays[] Data { get; set; }
 }
 
-public class Datum
+public class ValApiSprays
 {
     [JsonPropertyName("uuid")] public Guid Uuid { get; set; }
 
@@ -221,6 +221,44 @@ public class Level
     [JsonPropertyName("assetPath")] public string AssetPath { get; set; }
 }
 
+public class ValApiBuddiesResponse
+{
+    [JsonPropertyName("status")] public long Status { get; set; }
+
+    [JsonPropertyName("data")] public ValApiBuddies[] Data { get; set; }
+}
+
+public class ValApiBuddies
+{
+    [JsonPropertyName("uuid")] public Guid Uuid { get; set; }
+
+    [JsonPropertyName("displayName")] public string DisplayName { get; set; }
+
+    [JsonPropertyName("isHiddenIfNotOwned")]
+    public bool IsHiddenIfNotOwned { get; set; }
+
+    [JsonPropertyName("themeUuid")] public Guid? ThemeUuid { get; set; }
+
+    [JsonPropertyName("displayIcon")] public Uri DisplayIcon { get; set; }
+
+    [JsonPropertyName("assetPath")] public string AssetPath { get; set; }
+
+    [JsonPropertyName("levels")] public BuddyLevel[] Levels { get; set; }
+}
+
+public class BuddyLevel
+{
+    [JsonPropertyName("uuid")] public Guid Uuid { get; set; }
+
+    [JsonPropertyName("charmLevel")] public long CharmLevel { get; set; }
+
+    [JsonPropertyName("displayName")] public string DisplayName { get; set; }
+
+    [JsonPropertyName("displayIcon")] public Uri DisplayIcon { get; set; }
+
+    [JsonPropertyName("assetPath")] public string AssetPath { get; set; }
+}
+
 public class ValApiRanksResponse
 {
     [JsonPropertyName("status")] public int Status { get; set; }
@@ -238,7 +276,7 @@ public class ValApiRanks
 
     [JsonPropertyName("assetPath")] public string AssetPath { get; set; }
 
-    public Dictionary<string, JsonElement>? ExtensionData { get; set; }
+    [JsonExtensionData] public Dictionary<string, JsonElement>? ExtensionData { get; set; }
 }
 
 public class Tier
@@ -261,7 +299,7 @@ public class Tier
     [JsonPropertyName("rankTriangleUpIcon")]
     public Uri RankTriangleUpIcon { get; set; }
 
-    public Dictionary<string, JsonElement>? ExtensionData { get; set; }
+    [JsonExtensionData] public Dictionary<string, JsonElement>? ExtensionData { get; set; }
 }
 
 public class ValApiGamemodeResponse
@@ -291,9 +329,16 @@ public class ValApiGamemode
 
     [JsonPropertyName("teamRoles")] public string[] TeamRoles { get; set; }
 
-    public Dictionary<string, JsonElement>? ExtensionData { get; set; }
+    [JsonExtensionData] public Dictionary<string, JsonElement>? ExtensionData { get; set; }
 
     [JsonPropertyName("displayIcon")] public Uri DisplayIcon { get; set; }
 
     [JsonPropertyName("assetPath")] public string AssetPath { get; set; }
+}
+
+public class ValApiGamePodsResponse
+{
+    [JsonPropertyName("status")] public long Status { get; set; }
+
+    [JsonPropertyName("data")] public Dictionary<string, JsonElement> Data { get; set; }
 }

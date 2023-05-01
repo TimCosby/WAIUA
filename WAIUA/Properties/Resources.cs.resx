@@ -121,135 +121,138 @@
     <value>Info</value>
   </data>
   <data name="JoinDiscord" xml:space="preserve">
-    <value>Rejoignez notre Discord</value>
+    <value>Připojte se na Discord</value>
   </data>
   <data name="JoinDiscordSub" xml:space="preserve">
-    <value>Pour du support, etc.</value>
+    <value>Pro podporu ostatních, atd.</value>
   </data>
   <data name="Author" xml:space="preserve">
-    <value>Fait par Soneliem</value>
+    <value>Vytvořil Soneliem</value>
   </data>
   <data name="Latestversion" xml:space="preserve">
-    <value>Dernière version:</value>
+    <value>Nejnovější Verze:</value>
   </data>
   <data name="CurrentVersion" xml:space="preserve">
-    <value>Version actuelle:</value>
+    <value>Vaše Verze:</value>
   </data>
   <data name="CheckUpdates" xml:space="preserve">
-    <value>Rechercher des mises à jour</value>
+    <value>Zkontrolovat Aktualizace</value>
   </data>
   <data name="Login" xml:space="preserve">
-    <value>Connexion</value>
+    <value>Přihlásit se</value>
+    <comment>&apos;Přihlásit se&apos; Is a long phrase but there is nothing shorter in Czech for word Login</comment>
   </data>
   <data name="SettingsInfoExplanation2" xml:space="preserve">
-    <value>Toute communication de vos identifiants sont faits directement avec les serveurs Riot sans aucun stockage de mots de passe localement ou en ligne.</value>
+    <value>Veškerá komunikace týkající se vašich přihlašovacích údajů probíhá přímo přes servery Riot bez ukládání hesel lokálně nebo online.</value>
   </data>
   <data name="AuthStatusTitle" xml:space="preserve">
-    <value>Statut authentification</value>
+    <value>Stav Přihlášení</value>
   </data>
   <data name="AuthStatusDefault" xml:space="preserve">
-    <value>Cliquer ci-dessous pour mettre à jour</value>
+    <value>Klikněte dolů pro aktualizování</value>
   </data>
   <data name="AuthStatusButton" xml:space="preserve">
-    <value>Vérifier authentification</value>
+    <value>Zkontrolovat Přihlášení</value>
   </data>
   <data name="AuthStatusAuthAs" xml:space="preserve">
-    <value>Authentifié comme:</value>
+    <value>Přihlášen jako:</value>
   </data>
   <data name="AutoLoginTitle" xml:space="preserve">
-    <value>Connexion automatique</value>
+    <value>Automatické Přihlašování</value>
   </data>
   <data name="AutoLoginExplanation" xml:space="preserve">
-    <value>Note: Valorant doit être en cours d&apos;exécution pour que cela fonctionne</value>
+    <value>Poznámka: Valorant musí být zapnutý aby tohle fungovalo</value>
   </data>
   <data name="AuthStatusFail" xml:space="preserve">
-    <value>Non authentifié</value>
+    <value>Nejste Přihlášen</value>
   </data>
   <data name="Translator" xml:space="preserve">
-    <value>Traduit en Français par Rayjacker et SeifB_</value>
+    <value>Translated into Czech By Dom_Zel</value>
     <comment>Please replace the Language and Names</comment>
   </data>
   <data name="RefreshMatch" xml:space="preserve">
-    <value>Cliquer ici pour rafraîchir le match</value>
+    <value>Klikněte Pro Obnovení</value>
   </data>
   <data name="SettingsTitle" xml:space="preserve">
-    <value>Paramètres</value>
+    <value>Nastavení</value>
   </data>
   <data name="SettingsInfoExplanation1" xml:space="preserve">
-    <value>Cette page vous permet de vous connecter, changer la langue de l&apos;appli, etc.</value>
+    <value>Nastavení vám umožňuje manuálně se přihlásit, změnit jazyk aplikace atd.</value>
   </data>
   <data name="SelLanguageTitle" xml:space="preserve">
-    <value>Sélectionner le language</value>
+    <value>Vybrat Jazyk</value>
   </data>
   <data name="Error" xml:space="preserve">
-    <value>Erreur</value>
+    <value>Chyba</value>
   </data>
   <data name="Refreshing" xml:space="preserve">
-    <value>Rafraîchissement...</value>
+    <value>Obnovování...</value>
   </data>
   <data name="NoMatch" xml:space="preserve">
-    <value>Aucun match détecté</value>
+    <value>Žádný Zápas Nebyl Detekován</value>
   </data>
   <data name="NoValGame" xml:space="preserve">
-    <value>Merci d&apos;ouvrir Valorant d&apos;abord</value>
+    <value>Prvně Zapněte Valorant, Prosím</value>
   </data>
   <data name="TrackerToolTip" xml:space="preserve">
-    <value>Ouvrir le profil Tracker.gg</value>
+    <value>Otevřit Tracker.gg Profil</value>
   </data>
   <data name="CheckDownloadTitle" xml:space="preserve">
-    <value>Vérifier le contenu téléchargé</value>
+    <value>Zkontrolovat Stažený Obsah</value>
   </data>
   <data name="CheckDownloadButton" xml:space="preserve">
-    <value>Forcer une mise à jour</value>
+    <value>Vynutit Aktualizaci</value>
   </data>
   <data name="SponsorsTitle" xml:space="preserve">
-    <value>Sponsors</value>
+    <value>Sponzoři</value>
   </data>
   <data name="Home" xml:space="preserve">
-    <value>Accueil</value>
+    <value>WAIUA</value>
+    <comment>WAIUA Sounds better then Domov (Home) But if you like Domov more then WAIUA, Choose it.</comment>
   </data>
   <data name="Refresh" xml:space="preserve">
-    <value>Rafraîchir</value>
+    <value>Obnovit</value>
   </data>
   <data name="Account" xml:space="preserve">
-    <value>Compte</value>
+    <value>Účet</value>
   </data>
   <data name="Match" xml:space="preserve">
-    <value>Match</value>
+    <value>Zápas</value>
   </data>
   <data name="Status" xml:space="preserve">
-    <value>Statut</value>
+    <value>Stav</value>
   </data>
   <data name="Valorant" xml:space="preserve">
     <value>Valorant</value>
   </data>
   <data name="YourParty" xml:space="preserve">
-    <value>Votre groupe</value>
+    <value>Tvoje Party</value>
   </data>
   <data name="QueueTime" xml:space="preserve">
-    <value>Temps queue:</value>
+    <value>Doba Čekání:</value>
   </data>
   <data name="RefreshingIn" xml:space="preserve">
-    <value>Rafraîchissement dans:</value>
+    <value>Obnovení za:</value>
   </data>
   <data name="Score" xml:space="preserve">
-    <value>Score:</value>
+    <value>Skóre:</value>
   </data>
   <data name="HighScore" xml:space="preserve">
-    <value>Meilleur Score:</value>
+    <value>Nejvyšší Skóre:</value>
   </data>
   <data name="StartTrainer" xml:space="preserve">
-    <value>Commencer l&apos;exercice de visée</value>
+    <value>Zapnout &apos;Aim Trainer&apos;</value>
+    <comment>A precise translation of word Aim in Czech would be &apos;muška&apos;, but that is always used for a real gun etc. It was never used as a translation for Aim so I chose: Zapnout &apos;Aim Trainer&apos;</comment>
   </data>
   <data name="Player" xml:space="preserve">
-    <value>Joueur</value>
+    <value>Hráč</value>
   </data>
   <data name="Peak" xml:space="preserve">
-    <value>Pic:</value>
+    <value>Peak Rank:</value>
     <comment>Peak Rank</comment>
   </data>
   <data name="WR" xml:space="preserve">
-    <value>TV:</value>
+    <value>WR:</value>
     <comment>Win Rate</comment>
   </data>
 </root>

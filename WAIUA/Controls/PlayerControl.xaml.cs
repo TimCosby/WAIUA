@@ -1,9 +1,7 @@
 ﻿using System.Diagnostics;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Documents;
 using System.Windows.Input;
-using System.Windows.Navigation;
 using WAIUA.Objects;
 
 namespace WAIUA.Controls;
@@ -26,11 +24,11 @@ public partial class PlayerControl : UserControl
         set => SetValue(PlayerProperty, value);
     }
 
-    private void HandleLinkClick(object sender, RequestNavigateEventArgs e)
+    private void HandleLinkClick(object sender, MouseButtonEventArgs e)
     {
-        var hl = (Hyperlink) sender;
-        var navigateUri = hl.NavigateUri.ToString();
-        Process.Start(new ProcessStartInfo(navigateUri) {UseShellExecute = true});
+        var s = sender as FrameworkElement;
+        var player = s.DataContext as Player;
+        Process.Start(new ProcessStartInfo(player.IgnData.TrackerUri.ToString()) {UseShellExecute = true});
         e.Handled = true;
     }
 
@@ -38,10 +36,7 @@ public partial class PlayerControl : UserControl
     {
         var s = sender as FrameworkElement;
         var player = s.DataContext as Player;
-        if (player.IgnData.Username == "----")
-            popup.Child = new InventoryControl(player.SkinData, player.IdentityData.Name);
-        else
-            popup.Child = new InventoryControl(player.SkinData, player.IgnData.Username);
+        popup.Child = player.IgnData.Username == "----" ? new InventoryControl(player.SkinData, player.IdentityData.Name) : new InventoryControl(player.SkinData, player.IgnData.Username);
         popup.IsOpen = true;
         e.Handled = true;
     }
